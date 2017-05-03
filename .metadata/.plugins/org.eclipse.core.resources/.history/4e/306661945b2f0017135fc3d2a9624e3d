@@ -1,0 +1,372 @@
+package com.gcit.lms.web;
+
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.List;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.gcit.lms.entity.Book;
+import com.gcit.lms.entity.BookLoans;
+import com.gcit.lms.entity.Borrower;
+import com.gcit.lms.entity.Branch;
+import com.gcit.lms.entity.Copies;
+import com.gcit.lms.service.AdminService;
+import com.gcit.lms.service.LibrarianService;
+
+/**
+ * Servlet implementation class BranchService
+ */
+@WebServlet({ "/pageLibrary", "/searchLibary", "/updateLoansTable", "/updateNoOfCopies", "/validateLogin",
+		"/updateCheckoutTable", "/pageborrower", "/checkoutClient", "/updateReturnTable", "/bookReturn","/returningBook" })
+public class BranchServlet extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+
+	/**
+	 * @see HttpServlet#HttpServlet()
+	 */
+	public BranchServlet() {
+		super();
+	}
+
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse
+	 *      response)
+	 */
+	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		String reqUrl = request.getRequestURI().substring(request.getContextPath().length(),
+				request.getRequestURI().length());
+		String forwardPath = "/welcome.jsp";
+		Boolean isAjax = Boolean.FALSE;
+
+		switch (reqUrl) {
+		case "/pageLibrary":
+			pageBranch(request);
+			forwardPath = "/viewlibraries.jsp";
+			break;
+		case "/pageborrower":
+			Integer card = Integer.parseInt(request.getParameter("cardNo"));
+			pageBranch(request);
+			forwardPath = "/mybooks.jsp?cardNo=" + card;
+			break;
+		case "/bookReturn":
+			Integer cardNo = Integer.parseInt(request.getParameter("cardNo"));
+			pageBranch(request);
+			forwardPath = "/mybookreturns.jsp?cardNo=" + cardNo;
+			break;
+		case "/searchLibary":
+			String branchsData = searchBranchs(request);
+			response.getWriter().write(branchsData);
+			isAjax = Boolean.TRUE;
+			break;
+		case "/updateLoansTable":
+			String loanData = updateLoansTable(request);
+			response.getWriter().write(loanData);
+			isAjax = Boolean.TRUE;
+			break;
+		case "/updateCheckoutTable":
+			String data = updateCheckoutTable(request);
+			response.getWriter().write(data);
+			isAjax = Boolean.TRUE;
+			break;
+		case "/updateReturnTable":
+			String returnData = updateReturnTable(request);
+			response.getWriter().write(returnData);
+			isAjax = Boolean.TRUE;
+			break;
+		default:
+			break;
+		}
+
+		if (!isAjax) {
+			RequestDispatcher rd = request.getRequestDispatcher(forwardPath);
+			rd.forward(request, response);
+		}
+		response.getWriter().append("Served at: ").append(request.getContextPath());
+	}
+
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse
+	 *      response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		String reqUrl = request.getRequestURI().substring(request.getContextPath().length(),
+				request.getRequestURI().length());
+		String forwardPath = "/welcome.jsp";
+		Boolean isAjax = Boolean.FALSE;
+
+		switch (reqUrl) {
+		case "/updateNoOfCopies":
+			updateNoOfCopies(request);
+			forwardPath = "/viewlibraries.jsp";
+			break;
+		case "/validateLogin":
+			boolean varify = validateLogin(request);
+			forwardPath = "/clientmenu.jsp";
+			if (!varify)
+				forwardPath = "/Menu.jsp?option=Borrower";
+			break;
+		case "/checkoutClient":
+			Integer card = checkoutBook(request);
+			forwardPath = "/mybooks.jsp?cardNo=" + card;
+			break;
+		case "/returningBook":
+			Integer returningCard = returnMyBook(request);
+			System.out.println("returning from switch");
+			forwardPath = "/mybooksreturns.jsp?cardNo=" + returningCard;
+			break;
+		default:
+			break;
+
+		}
+
+		RequestDispatcher rd = request.getRequestDispatcher(forwardPath);
+		rd.forward(request, response);
+	}
+
+	private boolean validateLogin(HttpServletRequest request) {
+		String card = request.getParameter("cardNo");
+		try {
+			Integer cardNo = Integer.parseInt(card);
+			LibrarianService iservice = new LibrarianService();
+
+			request.setAttribute("cardNo", cardNo);
+			return iservice.varifyCardNumber(cardNo);
+
+		} catch (SQLException | NumberFormatException e) {
+			System.out.println("Failed to varify card number.");
+		}
+
+		return false;
+	}
+
+	private void updateNoOfCopies(HttpServletRequest request) {
+		String noOfCopies = request.getParameter("noOfCopies");
+		String branchId = request.getParameter("branchId");
+		String bookId = request.getParameter("bookId");
+		String toAdd = request.getParameter("add");
+
+		AdminService service = new AdminService();
+		LibrarianService iservice = new LibrarianService();
+
+		try {
+			Copies copy = new Copies();
+			copy.setBookId(Integer.parseInt(bookId));
+			copy.setBranchId(Integer.parseInt(branchId));
+
+			System.out.println("Book Id: " + bookId + " Branch Id: " + branchId);
+			copy.setNoOfCopies(Integer.parseInt(noOfCopies) + Integer.parseInt(toAdd));
+
+			iservice.updateCopies(copy);
+
+			request.setAttribute("idx", Integer.parseInt(branchId));
+		} catch (SQLException | NumberFormatException e) {
+			System.out.println("Invalid inputs");
+		}
+	}
+
+	private Integer checkoutBook(HttpServletRequest request) {
+			Integer cardNo = null, bookId, branchId;
+
+		try {
+			cardNo = Integer.parseInt(request.getParameter("cardNo"));
+			bookId = Integer.parseInt(request.getParameter("bookId"));
+			branchId = Integer.parseInt(request.getParameter("branchId"));
+
+			LibrarianService service = new LibrarianService();
+			BookLoans loan = new BookLoans();
+
+			System.out.println("bookId: " + bookId + " branchId: " + branchId + " cardNo: " + cardNo);
+			loan.setBookId(bookId);
+			loan.setBranchId(branchId);
+			loan.setCardNo(cardNo);
+
+			Copies copy = service.getCopyByCardNo(bookId, branchId);
+			copy.setNoOfCopies(copy.getNoOfCopies() - 1);
+
+			service.addCheckoutBook(loan, copy);
+		} catch (SQLException | NumberFormatException e) {
+			System.out.println("checkout failed");
+		}
+		return cardNo;
+	}
+	
+	private Integer returnMyBook(HttpServletRequest request) {
+			Integer cardNo = null, bookId, branchId;
+			String dueDate;
+
+		try {
+			cardNo = Integer.parseInt(request.getParameter("cardNo"));
+			bookId = Integer.parseInt(request.getParameter("bookId"));
+			branchId = Integer.parseInt(request.getParameter("branchId"));
+			dueDate = request.getParameter("dueDate");
+
+			LibrarianService service = new LibrarianService();
+			BookLoans loan = new BookLoans();
+
+			System.out.println("bookId: " + bookId + " branchId: " + branchId + " cardNo: " + cardNo);
+			loan.setBookId(bookId);
+			loan.setBranchId(branchId);
+			loan.setCardNo(cardNo);
+			loan.setDueDate(dueDate);
+
+			Copies copy = service.getCopyByCardNo(bookId, branchId);
+			copy.setNoOfCopies(copy.getNoOfCopies() + 1);
+
+			System.out.println("copies value: " + copy.getNoOfCopies());
+			service.updateReturnBook(loan, copy);
+		} catch (SQLException | NumberFormatException e) {
+			System.out.println("Returning book failed");
+		}
+		return cardNo;
+
+	}
+
+	private void pageBranch(HttpServletRequest request) {
+		Integer pageNo = Integer.parseInt(request.getParameter("pageNo"));
+		AdminService service = new AdminService();
+		try {
+			request.setAttribute("branchs", service.getAllBranchs(pageNo));
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private String updateLoansTable(HttpServletRequest request) {
+		AdminService service = new AdminService();
+		LibrarianService iservice = new LibrarianService();
+		StringBuffer strBuf = new StringBuffer();
+		try {
+			// request.setAttribute("authors", service.getAuthorsByName(1,
+			// searchString));
+			Integer branchId = Integer.parseInt(request.getParameter("branchId"));
+			System.out.println("Servlet branch id: " + branchId);
+			Branch bs = service.getBranchByPk(branchId);
+			List<Book> books = bs.getBooks();
+
+			strBuf.append(
+					"<thead><tr><th>Branch Name</th><th>Book Title</th><th>Book Publisher</th><th>Number of Copies</th><th>Add copies</th></tr></thead><tbody>");
+			for (Book a : books) {
+				Integer noOfCopies = iservice.getBranchBookCopies(bs.getBranchId(), a.getBookId());
+				strBuf.append("<tr><td>" + bs.getBranchName() + "</td><td>" + a.getTitle() + "</td><td>"
+						+ iservice.getBookPublisher(a.getPubId()).getPublisherName() + "</td><td>" + noOfCopies
+						+ "</td>");
+				strBuf.append(
+						"<td><button type='button' class='btn btn-success' data-toggle='modal' data-target='#editBranchModal' href='addcopies.jsp?branchId="
+								+ bs.getBranchId() + "&bookId=" + a.getBookId() + "'>Add Copies +</button></td>");
+			}
+			strBuf.append("</tbody>");
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return strBuf.toString();
+	}
+
+	private String searchBranchs(HttpServletRequest request) {
+		String searchString = request.getParameter("searchString");
+		AdminService service = new AdminService();
+		StringBuffer strBuf = new StringBuffer();
+		try {
+			// request.setAttribute("authors", service.getAuthorsByName(1,
+			// searchString));
+			List<Branch> branchs = service.getBranchsByName(1, searchString);
+			strBuf.append(
+					"<thead><tr><th>#</th><th>Branch Name</th><th>Branch Address</th><th>Edit</th><th>Delete</th></tr></thead><tbody>");
+			for (Branch a : branchs) {
+				strBuf.append("<tr><td>" + branchs.indexOf(a) + 1 + "</td><td>" + a.getBranchName() + "</td><td>"
+						+ a.getBranchAddress() + "</td>");
+				strBuf.append(
+						"<td><button type='button' class='btn btn-primary' data-toggle='modal' data-target='#editBranchModal'href='editbranch.jsp?branchId="
+								+ a.getBranchId() + "'>Update</button></td>");
+				strBuf.append("<td><button type='button' class='btn btn-success' href='#?branchId=" + a.getBranchId()
+						+ "'>Copies +</button></td></tr>");
+			}
+			strBuf.append("</tbody>");
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return strBuf.toString();
+	}
+
+	private String updateCheckoutTable(HttpServletRequest request) {
+		AdminService service = new AdminService();
+		LibrarianService iservice = new LibrarianService();
+		StringBuffer strBuf = new StringBuffer();
+		try {
+			// request.setAttribute("authors", service.getAuthorsByName(1,
+			// searchString));
+			Integer branchId = Integer.parseInt(request.getParameter("branchId"));
+			Integer cardNo = Integer.parseInt(request.getParameter("cardNo"));
+			Branch bs = service.getBranchByPk(branchId);
+			List<Book> books = bs.getBooks();
+
+			strBuf.append(
+					"<thead><tr><th>Branch Name</th><th>Book Title</th><th>Book Publisher</th><th>Number of Copies</th><th>Checkout book</th></tr></thead><tbody>");
+			for (Book a : books) {
+				Integer noOfCopies = iservice.getBranchBookCopies(bs.getBranchId(), a.getBookId());
+				if (noOfCopies < 1)
+					continue;
+				strBuf.append("<tr><td>" + bs.getBranchName() + "</td><td>" + a.getTitle() + "</td><td>"
+						+ iservice.getBookPublisher(a.getPubId()).getPublisherName() + "</td><td>" + noOfCopies
+						+ "</td>");
+				strBuf.append(
+						"<td><button type='button' class='btn btn-success' data-toggle='modal' data-target='#editBranchModal' href='checkoutbook.jsp?branchId="
+								+ bs.getBranchId() + "&bookId=" + a.getBookId() + "&cardNo=" + cardNo
+								+ "'>Checkout book</button></td>");
+			}
+			strBuf.append("</tbody>");
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return strBuf.toString();
+	}
+
+	private String updateReturnTable(HttpServletRequest request) {
+		AdminService service = new AdminService();
+		LibrarianService iservice = new LibrarianService();
+		StringBuffer strBuf = new StringBuffer();
+		try {
+			// request.setAttribute("authors", service.getAuthorsByName(1,
+			// searchString));
+			Integer branchId = Integer.parseInt(request.getParameter("branchId"));
+			Integer cardNo = Integer.parseInt(request.getParameter("cardNo"));
+			
+			//List<Book> books = iservice.getBooksOwnedByBorrower(branchId, cardNo);
+			List<BookLoans> bl = iservice.getLoansOwnedByBorrower(branchId,cardNo);
+			Branch bs = service.getBranchByPk(branchId);
+
+			System.out.println("Table attempt to create");
+
+			strBuf.append(
+					"<thead><tr><th>Branch Name</th><th>Book Title</th><th>Date out</th><th>Due date</th><th>Date in</th><th>Checkout book</th></tr></thead><tbody>");
+			for (BookLoans bookloans : bl) {
+				Book a = service.getBookByPk(bookloans.getBookId());
+				Integer noOfCopies = iservice.getBranchBookCopies(bs.getBranchId(), a.getBookId());
+				if (noOfCopies < 1)
+					continue;
+				strBuf.append("<tr><td>" + bs.getBranchName() + "</td><td>" + a.getTitle() + "</td><td>"
+						+ bookloans.getDateOut() + "</td><td>" + bookloans.getDueDate() +"</td><td>"+bookloans.getDateIn()
+						+ "</td>");
+				strBuf.append(
+						"<td><button type='button' class='btn btn-primary' data-toggle='modal' data-target='#returnBookModal' href='returnbook.jsp?branchId="
+								+ bs.getBranchId() + "&bookId=" + a.getBookId() + "&cardNo=" + cardNo+"&dateOut="+bookloans.getDateOut()
+								+ "'>Return book</button></td>");
+			}
+			strBuf.append("</tbody>");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return strBuf.toString();
+	}
+}

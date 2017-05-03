@@ -1,0 +1,15 @@
+package com.gcit.libraryApp.Borrower;
+
+import java.sql.Connection;
+import java.util.ArrayList;
+
+public interface Borrower {
+	public int showTextBookAvailable(Connection conn, int branchId);
+	public int showTextBookAvailable(Connection conn, int branchId, int cardNo);
+	public void updateBookRecord(Connection conn,ArrayList<String> borrower, int branchId, int bookId);
+	public void updateBookRecord(Connection conn,int cardNo, int branchId, int bookId);
+	public ArrayList<String> varifyCardNumber(Connection conn, int branchId);
+	public int getCurrentTableKey(int index);
+	public int getDateOut(int index);
+	
+}

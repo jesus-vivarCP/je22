@@ -1,0 +1,5 @@
+<%@include file="include.html"%>
+<div class="jumbotron">
+	<h2>Admin Books Options</h2>
+
+</div>

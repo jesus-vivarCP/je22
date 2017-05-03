@@ -1,0 +1,74 @@
+<%@include file="include.html"%>
+<%@page import="java.util.*"%>
+
+<%
+	AdminService service = new AdminService();
+	Integer authorsCount = service.getAuthorsCount();
+	Map<String,ArrayList<String>> obj = new HashMap<>();
+	obj.put("title",null);
+	obj.put("publisher",null);
+	obj.put("authors",null);
+	obj.put("genres",null);
+	if (authorsCount % 10 > 0) {
+		numOfPages = authorsCount / 10 + 1;
+	} else {
+		numOfPages = authorsCount / 10;
+	}
+	List<Author> authors = new ArrayList<>();
+	if (request.getAttribute("authors") != null) {
+		authors = (List<Author>) request.getAttribute("authors");
+	} else {
+		authors = service.getAllAuthors(1);
+	}
+%>
+<div>
+	<div class="page-header">
+		<h1>Book and Author Information</h1>
+	</div>
+	<h4>Enter book details</h4>
+	<table class="table" id="bookTable">
+		<thead>
+			<tr>
+				<th>Required Field</th>
+				<th>Placeholder</th>
+				<th>Update</th>
+			</tr>
+		</thead>
+		<tbody>
+		<%
+			for(String key: obj.keySet()) {
+				ArrayList<String> temp = obj.get(key);
+				String str = "Unknown";
+				if(!temp.isEmpty()) {
+					str = "";
+					for(String value: temp)
+						str+= value + ",";
+				}
+		%>
+			<tr>
+				<td><%=key%></td>
+				<td><%=str%></td>
+				<td><button type="button" class="btn btn-primary"
+						data-toggle="modal" data-target="#modifyBookModal"
+						href="bookmodal.jsp?modify=<%=key%>">Replace</button></td>
+			</tr>
+			<%} %>
+		</tbody>
+	</table>
+</div>
+
+<div class="modal fade bs-example-modal-lg" id="modifyBookModal"
+	tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content"></div>
+	</div>
+</div>
+<script>
+$(document).ready(function()
+{
+    $('.modal').on('hidden.bs.modal', function(e)
+    { 
+        $(this).removeData();
+    }) ;
+});
+</script>

@@ -1,0 +1,84 @@
+package com.gcit.lms.dao;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.gcit.lms.entity.Author;
+import com.gcit.lms.entity.Copies;
+
+public class CopiesDAO extends BaseDAO {
+
+	public CopiesDAO(Connection conn) {
+		super(conn);
+	}
+	
+	public void addCopies(Copies copies) throws ClassNotFoundException, SQLException{
+		save("insert into tbl_book_copies (bookId,branchId,noOfCopies) values (?,?,?)", 
+				new Object[] {copies.getBookId(),copies.getBranchId(),copies.getNoOfCopies()});
+	}
+	
+	public void updateCopies(Copies copies) throws ClassNotFoundException, SQLException{
+		save("update tbl_book_copies set noOfCopies = ? where bookId = ? and branchId = ?", 
+				new Object[]{copies.getBookId(),copies.getBranchId()});
+	}
+	
+	public void deleteCopies(Copies copies) throws ClassNotFoundException, SQLException{
+		save("delete from tbl_book_copies where bookId = ? and branchId = ?",
+				new Object[] {copies.getBookId(),copies.getBranchId()});
+	}
+	
+	public List<Copies> readAllCopies(Integer pageNo) throws ClassNotFoundException, SQLException{
+		setPageNo(pageNo);
+		return read("select * from tbl_book_copies", null);
+	}
+	
+	public List<Copies> readAllCopies() throws ClassNotFoundException, SQLException{
+		return readAll("select * from tbl_book_copies", null);
+	}
+	
+	public Copies readCopiesByID(Integer bookId,Integer branchId) throws ClassNotFoundException, SQLException{
+		List<Copies> copies = read("select * from tbl_book_copies where bookId = ? and branchId = ?", 
+				new Object[] {bookId,branchId});
+		if(copies!=null && !copies.isEmpty()){
+			return copies.get(0);
+		}
+		return null;
+	}
+	
+	public Integer getCopiesCount() throws ClassNotFoundException, SQLException{
+		return readCount("select count(*) as COUNT from tbl_book_copies", null);
+	}
+
+	@Override
+	public List<Copies> extractData(ResultSet rs) throws SQLException, ClassNotFoundException {
+		BookDAO bdao = new BookDAO(conn);
+		List<Copies> copies = new ArrayList<>();
+		while(rs.next()){
+			Copies a = new Copies();
+			a.setBookId(rs.getInt("bookId"));
+			a.setBranchId(rs.getInt("branchId"));
+			a.setNoOfCopies(rs.getInt("noOfCopies"));
+			a.setBooks(bdao.readFirstLevel("select * from tbl_book where bookId IN (Select bookId from tbl_book_Copies where CopiesId = ?)"
+					+ " and branchId IN (Select branchId from tbl_book_Copies where branchId = ?)", 
+					new Object[]{a.getBookId(),a.getBranchId()}));
+			copies.add(a);
+		}
+		return copies;
+	}
+
+	@Override
+	public List extractDataFirstLevel(ResultSet rs) throws SQLException, ClassNotFoundException {
+		List<Copies> copies = new ArrayList<>();
+		while(rs.next()){
+			Copies a = new Copies();
+			a.setBookId(rs.getInt("bookId"));
+			a.setBranchId(rs.getInt("branchId"));
+			copies.add(a);
+		}
+		return copies;
+	}
+
+}

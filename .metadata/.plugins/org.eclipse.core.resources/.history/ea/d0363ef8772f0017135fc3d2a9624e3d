@@ -1,0 +1,108 @@
+package com.gcit.lms.dao;
+
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.gcit.lms.entity.Book;
+import com.gcit.lms.entity.BookLoans;
+
+public class BookLoanDAO extends BaseDAO {
+
+	public BookLoanDAO(Connection conn) {
+		super(conn);
+	}
+
+	public void addBookLoans(BookLoans loans) throws ClassNotFoundException, SQLException {
+		save("insert into tbl_book_loans (cardNo,bookId,branchId,dateOut,dueDate,dateIn) values(?,?,?,now(),DATE_ADD(NOW(), INTERVAL 7 DAY),null)",
+				new Object[] { loans.getCardNo(), loans.getBookId(), loans.getBranchId() });
+	}
+
+	public void updateBookLoanDateIn(BookLoans loans) throws ClassNotFoundException, SQLException {
+		save("update tbl_book_loans set dateIn = now() where cardNo = ? and bookId = ? and branchId = ? and dateOut = ?",
+				new Object[] { loans.getCardNo(), loans.getBookId(), loans.getBranchId(),
+						Timestamp.valueOf(LocalDateTime.parse(loans.getDateOut())) });
+	}
+
+	public void updateBookLoanExtend(BookLoans loans) throws ClassNotFoundException, SQLException {
+		save("update tbl_book_loans set dueDate = DATE_ADD(NOW(), INTERVAL 7 DAY)"
+				+ " where cardNo = ? and bookId = ? and branchId = ? and dateOut = ?",
+				new Object[] { loans.getCardNo(), loans.getBookId(), loans.getBranchId(), loans.getDateOut() });
+	}
+
+	public List<BookLoans> readBooksLoantoBorrowers(Integer branchId, Integer cardNo)
+			throws ClassNotFoundException, SQLException {
+		return read("select * from tbl_book_loans where cardNo = ? and branchId = ? and bookId IN"
+				+ " (select bookId from tbl_book_loans) and dateIn is null", new Object[] { cardNo, branchId });
+	}
+
+	public List<BookLoans> readAllBookLoans(Integer pageNo) throws ClassNotFoundException, SQLException {
+		setPageNo(pageNo);
+		return read("select * from tbl_Book_loans", null);
+	}
+
+	public List<BookLoans> readAllBookLoans() throws ClassNotFoundException, SQLException {
+		return readAll("select * from tbl_BookLoans", null);
+	}
+
+	public BookLoans readBookLoansByID(Integer cardNo) throws ClassNotFoundException, SQLException {
+		List<BookLoans> loans = read("select * from tbl_book_loans where cardNo = ? and dateIn is null",
+				new Object[] { cardNo });
+		if (loans != null && !loans.isEmpty()) {
+			return loans.get(0);
+		}
+		return null;
+	}
+
+	public List<BookLoans> readBookLoansByCardNo(Integer cardNo) throws ClassNotFoundException, SQLException {
+		List<BookLoans> loans = read("select * from tbl_book_loans where cardNo = ?", new Object[] { cardNo });
+		return loans;
+	}
+
+	public Integer getBookLoansCount() throws ClassNotFoundException, SQLException {
+		return readCount("select count(*) as COUNT from tbl_book_loans", null);
+	}
+
+	@Override
+	public List<BookLoans> extractData(ResultSet rs) throws SQLException, ClassNotFoundException {
+		BookDAO bdao = new BookDAO(conn);
+		List<BookLoans> loans = new ArrayList<>();
+		while (rs.next()) {
+			BookLoans a = new BookLoans();
+			a.setBookId(rs.getInt("bookId"));
+			a.setBranchId(rs.getInt("branchId"));
+			a.setCardNo(rs.getInt("cardNo"));
+			a.setDateIn(rs.getString("dateIn"));
+			a.setDateOut(rs.getTimestamp("dateOut").toLocalDateTime().toString());
+			a.setDueDate(rs.getTimestamp("dueDate").toLocalDateTime().toString());
+			// a.setBooks(bdao.readFirstLevel("select * from tbl_book where
+			// bookId IN (Select bookId from tbl_book_book_loans where cardNo =
+			// ?)", new Object[]{a.getCardNo()}));
+			loans.add(a);
+		}
+		return loans;
+	}
+
+	@Override
+	public List extractDataFirstLevel(ResultSet rs) throws SQLException, ClassNotFoundException {
+		List<BookLoans> loans = new ArrayList<>();
+		while (rs.next()) {
+			BookLoans a = new BookLoans();
+			a.setBookId(rs.getInt("bookId"));
+			a.setBranchId(rs.getInt("branchId"));
+			a.setCardNo(rs.getInt("cardNo"));
+			a.setDateIn(rs.getTimestamp("dateIn").toLocalDateTime().toString());
+			a.setDateOut(rs.getTimestamp("dateOut").toLocalDateTime().toString());
+			a.setDueDate(rs.getTimestamp("dueDate").toLocalDateTime().toString());
+
+			loans.add(a);
+		}
+		return loans;
+	}
+}

@@ -1,0 +1,85 @@
+package com.gcit.lms.dao;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.gcit.lms.entity.BookLoans;
+/**
+ * This is a DAO
+ * @author ppradhan
+ *
+ */
+public class BookLoanDAO extends BaseDAO{
+	
+	public BookLoanDAO(Connection conn) {
+		super(conn);
+	}
+
+	public void addBookLoans(BookLoans loans) throws ClassNotFoundException, SQLException{
+		save("insert into tbl_Book_loans (bookId,branchId,dateOut,dueDate,dateIn) values (?,?,now(),DATE_ADD(NOW(), INTERVAL 7 DAY),null)",
+				new Object[] {loans.getBookId(),loans.getBranchId(),loans});
+	}
+	
+	public void updateBookLoans(BookLoans loans) throws ClassNotFoundException, SQLException{
+		save("update tbl_Book_loans set dateIn = ? where cardNo = ?", new Object[]{loans.getCardNo(), loans.getDateIn()});
+	}
+	
+	public void deleteBookLoans(BookLoans BookLoans) throws ClassNotFoundException, SQLException{
+		save("delete from tbl_Book_loans where BookLoansId = ?", new Object[] {BookLoans.getBookLoansId()});
+	}
+	
+	public List<BookLoans> readAllBookLoanss(Integer pageNo) throws ClassNotFoundException, SQLException{
+		setPageNo(pageNo);
+		return read("select * from tbl_BookLoans", null);
+	}
+	
+	public List<BookLoans> readAllBookLoanss() throws ClassNotFoundException, SQLException{
+		return readAll("select * from tbl_BookLoans", null);
+	}
+	
+	public BookLoans readBookLoansByID(Integer BookLoansID) throws ClassNotFoundException, SQLException{
+		List<BookLoans> BookLoanss = read("select * from tbl_BookLoans where BookLoansId = ?", new Object[]{BookLoansID});
+		if(BookLoanss!=null && !BookLoanss.isEmpty()){
+			return BookLoanss.get(0);
+		}
+		return null;
+	}
+	
+	public List<BookLoans> readBookLoanssByName(String  BookLoansName) throws ClassNotFoundException, SQLException{
+		BookLoansName = "%"+BookLoansName+"%";
+		return read("select * from tbl_BookLoans where BookLoansName like ?", new Object[]{BookLoansName});
+	}
+	
+	public Integer getBookLoanssCount() throws ClassNotFoundException, SQLException{
+		return readCount("select count(*) as COUNT from tbl_BookLoans", null);
+	}
+
+	@Override
+	public List<BookLoans> extractData(ResultSet rs) throws SQLException, ClassNotFoundException {
+		BookDAO bdao = new BookDAO(conn);
+		List<BookLoans> BookLoanss = new ArrayList<>();
+		while(rs.next()){
+			BookLoans a = new BookLoans();
+			a.setBookLoansId(rs.getInt("BookLoansId"));
+			a.setBookLoansName(rs.getString("BookLoansName"));
+			a.setBooks(bdao.readFirstLevel("select * from tbl_book where bookId IN (Select bookId from tbl_book_BookLoanss where BookLoansId = ?)", new Object[]{a.getBookLoansId()}));
+			BookLoanss.add(a);
+		}
+		return BookLoanss;
+	}
+
+	@Override
+	public List extractDataFirstLevel(ResultSet rs) throws SQLException, ClassNotFoundException {
+		List<BookLoans> BookLoans = new ArrayList<>();
+		while(rs.next()){
+			BookLoans a = new BookLoans();
+			a.setBookLoansId(rs.getInt("BookLoansId"));
+			a.setBookLoansName(rs.getString("BookLoansName"));
+			BookLoanss.add(a);
+		}
+		return BookLoans;
+	}
+}

@@ -1,0 +1,7 @@
+<%@include file="include.html"%>
+<div class="jumbotron">
+	<h2>Hello Admin! What do you want to do?</h2>
+
+	<h3><a href="addauthor.jsp">Add Author</a><br /></h3>
+	<h3><a href="viewauthors.jsp">View Authors</a><br /></h3> 
+</div>

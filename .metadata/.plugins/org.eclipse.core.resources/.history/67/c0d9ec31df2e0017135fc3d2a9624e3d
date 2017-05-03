@@ -1,0 +1,11 @@
+package com.gcit.lms.dao;
+
+import java.sql.Connection;
+
+public class CopiesDAO extends BaseDAO {
+
+	public CopiesDAO(Connection conn) {
+		super(conn);
+	}
+
+}

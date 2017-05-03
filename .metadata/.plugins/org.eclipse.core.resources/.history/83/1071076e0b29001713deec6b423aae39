@@ -1,0 +1,253 @@
+package com.gcit.libraryApp.Administrator;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Map;
+
+import com.gcit.libraryApp.GenericFunction.GenericFunctions;
+
+public class Admin implements Administrator {
+	private Connection conn;
+	private GenericFunctions gf;
+	
+	private ResultSet rs;
+	private String query;
+	
+	public Admin(Connection conn, GenericFunctions gf) {
+		this.conn = conn;
+		this.gf = gf;
+		query = "";
+	}
+
+	@Override
+	public void Add(String table, Map<String, ArrayList<String>> values, Map<String,ArrayList<String>> columnTags) {
+		ArrayList<Integer> ids = new ArrayList<>();
+		String[] tables = table.split(" ");
+		
+		for (String row : tables) {
+			int id = add(row, values.get(row),columnTags.get(row));
+			ids.add(id);
+		}
+		
+		if (tables[0].equals("tbl_book")) {addAuthor(ids.get(0), ids.get(1));}
+		ids.clear();
+	}
+	
+	private void addAuthor(int bookId,int authorId ) {
+		query = "Insert into tbl_book_authors Values(?,?)";
+		try{
+			PreparedStatement pstmt = conn.prepareStatement(query);
+			pstmt.setInt(1,bookId);
+			pstmt.setInt(2,authorId);
+			pstmt.executeUpdate();
+			conn.commit();
+		}catch(SQLException e){
+			if(conn!=null) try {gf.println("Rolled back successful");conn.rollback();} catch (SQLException e1) {gf.println("Fail to rollback");/*Do nothing*/}
+			gf.println("Insert of book_authors failed.");
+		}
+	}
+	
+	private int add(String table, ArrayList<String> args, ArrayList<String> columnTags) {
+		int index = 1;
+		int size = columnTags.size();
+		int id=0;
+		
+		query = "INSERT INTO "+table+"(";
+		
+		for(index=1;index<size-1;index++) query += columnTags.get(index)+",";
+		query += columnTags.get(index)+") Values(";
+		size = args.size();
+		
+		for(int i=0;i<size-1;i++) query += "?,";
+		query +="?)";
+		
+		index=1;
+		gf.println("Query: "+query);
+		try {
+			PreparedStatement pstmt = conn.prepareStatement(query);
+			for(String val: args) {
+				setTo(index,val,pstmt);
+				index++;
+			}
+			pstmt.executeUpdate();
+			conn.commit();
+			
+			query = "Select * From "+table+" Order by "+columnTags.get(0)+ " DESC Limit 1";
+			gf.println("Query: "+query);
+			pstmt = conn.prepareStatement(query);
+			rs = pstmt.executeQuery();
+			rs.next();
+			id = rs.getInt(1);
+			conn.commit();
+			
+		} catch (SQLException e) {
+			if(conn!=null) try {gf.println("Rolled back successful");conn.rollback();} 
+						   catch (SQLException e1) {gf.println("Fail to rollback");/*Do nothing*/}
+			gf.println("Failed to insert statement.");
+		}
+		return id;
+	}
+	
+	private void setTo(int param, String s, PreparedStatement p) {
+		try {
+			try { p.setInt(param, Integer.parseInt(s));
+			} catch (NumberFormatException e){ p.setString(param, s);}
+		} catch(SQLException e) { gf.println("Exception on preparing the query.");}
+	}
+
+	@Override
+	public int Update(String table,ArrayList<String> columns, ArrayList<String> values) {
+		String nameTag = columns.get(0);
+		int id = Integer.parseInt(values.get(0));
+		int size = columns.size();
+		int idx;
+
+		query = "Update "+table+" Set ";
+		
+		for(idx=1;idx<size-1;idx++) query += columns.get(idx)+" = ?, ";
+		query += columns.get(idx)+" = ? Where "+nameTag+" = ? ";
+		
+		gf.println(query);
+		try {
+			PreparedStatement pstmt = conn.prepareStatement(query);
+			for(idx=1;idx<size;idx++) {setTo(idx,values.get(idx),pstmt);gf.println(values.get(idx));}
+			pstmt.setInt(idx, id);
+			pstmt.executeUpdate();
+			conn.commit();
+			gf.println("Updated commited.");
+		} catch(SQLException e){gf.println("Update of table "+table+" failed.");}
+		
+		return 0;
+	}
+
+	@Override
+	public void Delete(String table, ArrayList<String> columns, ArrayList<String> values) {
+		String nameTag = columns.get(0);
+		int id = Integer.parseInt(values.get(0));
+		int size = columns.size();
+		int idx=1;
+
+		query = "DELETE FROM "+table+" WHERE ";
+		
+		//for(idx=1;idx<size-1;idx++) query += columns.get(idx)+" = ? and ";
+		query += nameTag+" = ? ";
+		
+		gf.println(query);
+		try {
+			PreparedStatement pstmt = conn.prepareStatement(query);
+			//for(idx=1;idx<size;idx++) {setTo(idx,values.get(idx),pstmt);gf.println(values.get(idx));}
+			pstmt.setInt(1, id);
+			pstmt.executeUpdate();
+			conn.commit();
+		} catch(SQLException e){gf.println(nameTag+": does not exists.");}
+	}
+	
+	@Override
+	public int getColumnNames(String table, Map<String, ArrayList<String>> args, Map<String, ArrayList<String>> values) {
+		String[] tables = table.split(" ");
+		ArrayList<String> temp;
+		
+		for (String column: tables) {
+			if(!args.containsKey(column)) {
+				temp = new ArrayList<>();
+				values.put(column, temp);
+				
+				temp = new ArrayList<>();
+				args.put(column,temp);
+			} else temp = args.get(column);
+
+			getTableColumns(column, temp);
+		}
+		return 0;
+	}
+	
+	private void getTableColumns(String table, ArrayList<String> args) {
+		query = "SHOW COLUMNS FROM "+ table;
+		
+		try {
+			PreparedStatement pstmt = conn.prepareStatement(query);
+			rs = pstmt.executeQuery();
+			
+			while (rs.next()) {
+				String columnValue = rs.getString(1);
+				gf.print(columnValue + " | ");
+				args.add(columnValue);
+			}
+			gf.println("");
+			conn.commit();
+			
+		} catch (SQLException e) {gf.println("Getting columns name failed.");}
+	}
+		
+
+	@Override
+	public void Override(String table, ArrayList<String> columnTags, ArrayList<String> values) {
+		int size = columnTags.size()-2;
+		int idx=0;
+		
+		query = "Update "+table+" Set dateOut = now(),dueDate = DATE_ADD(NOW(),INTERVAL 7 DAY),dateIn=null Where ";
+		
+		for(idx=0;idx<size;idx++) {query += columnTags.get(idx)+" = ? and "; gf.println(columnTags.get(idx));}
+		query += columnTags.get(idx) +" = ?";
+		gf.println(query);
+		
+		try {
+			PreparedStatement pstmt = conn.prepareStatement(query);
+			for(idx=0;idx<size;idx++) setTo(idx+1,values.get(idx),pstmt);
+			setTo(idx+1,values.get(idx),pstmt);
+			pstmt.executeUpdate();
+			conn.commit();
+			
+		}catch(SQLException e){gf.println("failed to override.");}
+		
+	}
+	
+	private void operation(String task,String table,ArrayList<String> columnTags, ArrayList<String> values) {
+		switch(task) {
+		case "OVERRIDE": Override(table,columnTags,values); break;
+		case "UPDATE": gf.println("Updating..."); break;
+		case "DELETE": Delete(table,columnTags,values); break;
+		default: gf.println(task+": Not an option.");break;
+		}
+	}
+
+	@Override
+	public ArrayList<String> taskAtTableLocation(Connection conn, String task,ArrayList<String> required,ArrayList<String> ColumnTags) {
+		ArrayList<String> values = new ArrayList<>();
+		int indentification = Integer.parseInt(required.get(0));
+		int location = Integer.parseInt(required.get(3));
+		String table = required.get(1);
+		String labelName = required.get(2);
+		
+		query = "Select * From "+table+" Where "+labelName+" = ?";
+		
+		try {
+			gf.println(query);
+			PreparedStatement pstmt =  conn.prepareStatement(query);
+			pstmt.setInt(1, indentification);
+			rs = pstmt.executeQuery();
+			
+			ResultSetMetaData rsmd = rs.getMetaData();
+			int columnsNumber = rsmd.getColumnCount();
+			
+			int size=0;
+			while (rs.next() && size+1 != location) size++;
+			
+			System.out.print((size+1)+") ");
+			for (int i = 1; i <= columnsNumber; i++) {
+				String columnValue = rs.getString(i);
+				values.add(columnValue);
+				System.out.print(columnValue + " | ");
+			}
+			System.out.println("");
+		} catch(SQLException e) {gf.println(task+" failed.");return null;}
+		
+		operation(task,table,ColumnTags,values);
+		
+		return values;
+	}
+}

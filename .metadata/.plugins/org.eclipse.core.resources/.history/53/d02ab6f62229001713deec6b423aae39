@@ -1,0 +1,120 @@
+package com.gcit.libraryApp.GenericFunction;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.InputMismatchException;
+import java.util.Scanner;
+
+public class GenericFunctions implements Generic{
+	private Scanner scanInt;
+	private Scanner scanStr;
+	
+	private String query;
+	private ResultSet rs;
+	
+	public GenericFunctions() {
+		scanInt = new Scanner(System.in);
+		scanStr = new Scanner(System.in);
+	}
+
+	@Override
+	public void print(String x) {
+		System.out.print(x);
+	}
+
+	@Override
+	public void println(String x) {
+		System.out.println(x);
+	}
+
+	@Override
+	public int integerCondition() {
+		int option;
+		String temp;
+		
+		try{temp = scanInt.nextLine(); option = Integer.parseInt(temp); return option;
+		}catch (InputMismatchException e) {println("Not a valid integer input");return 0;}
+	}
+
+	@Override
+	public String stringCondition() {
+		String option = null;
+		try{option = scanStr.nextLine(); return option;
+		}catch (InputMismatchException | NumberFormatException e) {println("Not a valid string input");
+		return null;}
+		
+	}
+
+	@Override
+	public int viewTable(Connection conn, String table) {
+		int size=0;
+		try {
+			query = "Select * From "+table;
+			PreparedStatement pstmt = conn.prepareStatement(query);
+			rs = pstmt.executeQuery();
+			
+			//ResultSetMetaData rsmd = rs.getMetaData();
+			//int columnsNumber = rsmd.getColumnCount();
+			
+			while (rs.next()) {
+				size++;
+				System.out.print(size+") ");/*
+				for (int i = 1; i <= columnsNumber; i++) {
+					String columnValue = rs.getString(i);
+					System.out.print(columnValue + " | ");
+				}*/
+				System.out.println(rs.getString(2));
+			}
+		} catch (SQLException e) {
+			System.out.println("view table failed.");return 0;}
+		return size+1;
+	}
+
+	@Override
+	public int viewTable(Connection conn, String table, int id, String nameId) {
+		int size=1;
+		try {
+			query = "Select * From "+table+" Where "+nameId+" = ?";
+			
+			PreparedStatement pstmt = conn.prepareStatement(query);
+			pstmt.setInt(1, id);
+			rs = pstmt.executeQuery();
+			conn.commit();
+			
+			ResultSetMetaData rsmd = rs.getMetaData();
+			int columnsNumber = rsmd.getColumnCount();
+			
+			while (rs.next()) {
+				System.out.print(size+") ");
+				for (int i = 1; i <= columnsNumber; i++) {
+					String columnValue = rs.getString(i);
+					System.out.print(columnValue + " | ");
+				}
+
+				size++;
+				println("\n");
+			}
+		} catch (SQLException e) { System.out.println("View table by id failed."); return 1;}
+		return size>1 ? 0 : 1;
+	}
+
+	@Override
+	public int getTableByIndex(Connection conn, String table, int idx) {
+		query = "Selct * From "+table;
+		try {
+			PreparedStatement pstmt =  conn.prepareStatement(query);
+			rs = pstmt.executeQuery();
+			
+			ResultSetMetaData rsmd = rs.getMetaData();
+			int columnsNumber = rsmd.getColumnCount();
+			
+			int size=0;
+			while (rs.next() && size+1 != location) size++;
+		}
+		catch(){}
+		return 0;
+	}
+}

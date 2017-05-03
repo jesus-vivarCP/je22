@@ -1,0 +1,18 @@
+<%@include file="include.html"%>
+
+<%
+	String menu = request.getParameter("option");
+
+	switch(menu) {
+	case "Admin":
+%>
+<%
+		break;
+	case "Librarian":
+		break;
+	case "Borrower":
+		break;
+		default:
+			break;
+	}
+%>

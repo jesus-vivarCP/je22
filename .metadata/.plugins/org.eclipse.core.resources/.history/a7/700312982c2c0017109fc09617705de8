@@ -1,0 +1,7 @@
+<%@include file="include.html"%>
+<div class="jumbotron">
+	<h2>Library Branch Options</h2>
+
+	<h3><a href="#">Add Author</a><br /></h3>
+	<h3><a href="#">View Authors</a><br /></h3> 
+</div>

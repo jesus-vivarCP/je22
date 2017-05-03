@@ -1,0 +1,26 @@
+package com.gcit.lms.dao;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+
+public class BorrowerDAO extends BaseDAO{
+
+	public BorrowerDAO(Connection conn) {
+		super(conn);
+	}
+
+	@Override
+	public List extractData(ResultSet rs) throws SQLException, ClassNotFoundException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List extractDataFirstLevel(ResultSet rs) throws SQLException, ClassNotFoundException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+}

@@ -1,0 +1,12 @@
+<%@include file="include.html"%>
+<div>
+	<h1>Welcome Administrator</h1>
+    <p> 
+	<h3><a href="author.jsp">Author Services</a> </h3> 
+	<h3><a href="book.html">Book Services</a> 
+	 <h3><a href="librarian.html">xxx</a> <br /></h3>
+	</p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,16 @@
+<%@include file="include.html"%>
+<div class="jumbotron">
+	<h3>Welcome Administrator</h3>
+		<h3>
+			<a href="author.jsp">Author Services</a>
+		</h3>
+		<h3>
+			<a href="book.html">Book Services</a>
+		<h3>
+		<h3>
+			<a href="librarian.html">xxx</a>
+		</h3>
+</div>
+
+</body>
+</html>

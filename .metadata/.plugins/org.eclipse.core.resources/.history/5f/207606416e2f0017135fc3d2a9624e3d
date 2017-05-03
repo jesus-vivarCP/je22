@@ -1,0 +1,45 @@
+<%@page import="com.gcit.lms.entity.Borrower"%>
+<%@page import="com.gcit.lms.service.AdminService"%>
+<%
+	AdminService service = new AdminService();
+%>
+
+<div>
+	<div class="modal-header"">
+		<button type="button" class="close" data-dismiss="modal"
+			aria-label="Close">
+			<span aria-hidden="true">&times;</span>
+		</button>
+		<h4 class="modal-title">Library Borrower Details</h4>
+	</div>
+	<form action="addBorrower" method="post">
+		<div class="modal-body">
+			<p>Enter details of the Borrower:</p>
+			<div align="center">
+				<table>
+					<tbody>
+						<tr>
+							<td><label>Borrower Name:</label></td>
+							<td><input type="text" name="borrowerName" id="borrowerName"
+								value=""></td>
+						</tr>
+						<tr>
+							<td><label>Borrower Address:</label></td>
+							<td><input type="text" name="borrowerAddress"
+								id="borrowerAddress" value=""></td>
+						</tr>
+						<tr>
+							<td><label>Borrower Phone:</label></td>
+							<td><input type="text" name="borrowerPhone"
+								id="borrowerPhone" value=""></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<div class="modal-footer">
+			<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			<button type="submit" class="btn btn-primary">Add Borrower</button>
+		</div>
+	</form>
+</div>

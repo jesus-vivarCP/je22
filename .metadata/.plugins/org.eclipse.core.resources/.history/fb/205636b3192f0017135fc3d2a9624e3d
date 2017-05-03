@@ -1,0 +1,72 @@
+package com.gcit.lms.service;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.gcit.lms.dao.BorrowerDAO;
+import com.gcit.lms.dao.CopiesDAO;
+import com.gcit.lms.dao.PublisherDAO;
+import com.gcit.lms.entity.Copies;
+import com.gcit.lms.entity.Publisher;
+
+public class LibrarianService {
+
+	
+	public void varifyCardNumber(Integer cardNo) throws SQLException {
+		Connection conn = null;
+		try {
+			conn = ConnectionUtil.getConnection();
+			BorrowerDAO b = new BorrowerDAO(conn);
+
+			copies.updateCopies(copy);
+			conn.commit();
+			System.out.println("Update number of copies successfully committed.");
+		} catch (SQLException | ClassNotFoundException e) {
+			System.out.println("Update Fail in copying");
+		}
+	}
+	
+	public void updateCopies(Copies copy) throws SQLException {
+		Connection conn = null;
+		try {
+			conn = ConnectionUtil.getConnection();
+			CopiesDAO copies = new CopiesDAO(conn);
+
+			copies.updateCopies(copy);
+			conn.commit();
+		} catch (SQLException | ClassNotFoundException e) {
+			System.out.println("Update Fail in copying");
+		}
+	}
+
+	public int getBranchBookCopies(Integer branchId, Integer bookId) {
+		Connection conn = null;
+		try {
+			conn = ConnectionUtil.getConnection();
+			CopiesDAO copies = new CopiesDAO(conn);
+
+			int noOfCopies = copies.readAllCopiesByBranch(branchId, bookId);
+			return noOfCopies;
+		} catch (SQLException | ClassNotFoundException e) {
+			System.out.println("Fail in copying");
+		}
+		return 0;
+	}
+
+	public Publisher getBookPublisher(Integer bookId) {
+		Connection conn = null;
+		try {
+			conn = ConnectionUtil.getConnection();
+			PublisherDAO publisher = new PublisherDAO(conn);
+
+			Publisher pub = publisher.readPublisherByID(bookId);
+			return pub;
+
+		} catch (SQLException | ClassNotFoundException e) {
+			System.out.println("Fail to get publisher infomation");
+		}
+		return null;
+	}
+}

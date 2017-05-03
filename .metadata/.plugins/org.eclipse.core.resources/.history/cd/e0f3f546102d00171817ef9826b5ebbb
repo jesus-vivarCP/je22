@@ -1,0 +1,59 @@
+<%@include file="include.html"%>
+
+<%
+	String service = request.getParameter("service");
+
+	switch(service) {
+	case "books":
+%>
+<div class="jumbotron">
+	
+	<h2>Admin Book Options</h2>
+
+	<h3><a href="addbook.jsp">Add Book</a><br /></h3>
+	<h3><a href="viewbooks.jsp">Update/Remove Books</a><br /></h3> 
+</div>
+<%
+		break;
+	case "author":
+%> 
+<div class="jumbotron">
+	<h2>Admin Author Options</h2>
+
+	<h3><a href="addauthor.jsp">Add Author</a><br /></h3>
+	<h3><a href="viewauthors.jsp">Update/Remove Authors</a><br /></h3> 
+</div>
+<%
+		break;
+	case "borrower":
+		
+%> 
+<div class="jumbotron">
+	<h1>Borrowed A book</h1>
+	
+	<h3><a href="#">Enter card number:</a><h3>
+</div>
+<%
+		break;
+	case "override":
+		
+%> 
+<div class="jumbotron">
+	<h1>Override due book</h1>
+	
+	<h3><a href="#">Enter client card number:</a><h3>
+</div>
+<%
+		break;
+%><%
+		default:
+			%>
+<div class="jumbotron">
+	<h1>Page not available</h1>
+
+	<h3><a href="#">Error</a><h3>
+</div>
+<%
+			break;
+	}
+%>

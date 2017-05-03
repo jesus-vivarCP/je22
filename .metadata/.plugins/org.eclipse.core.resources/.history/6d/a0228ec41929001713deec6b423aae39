@@ -1,0 +1,129 @@
+package com.gcit.libraryApp.Librarian;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.ArrayList;
+
+public class ManageBranch implements Librarian {
+	private PreparedStatement pstmt = null;
+	private ResultSet rs = null;
+	private String query = "";
+	
+	public ArrayList<String> getLibraryBranch(Connection conn,int id) {
+		ArrayList<String> list = new ArrayList<>();
+		query = "Select * from tbl_library_branch where branchId = ?";
+		try {
+			pstmt = conn.prepareStatement(query);
+			pstmt.setInt(1, id);
+			rs = pstmt.executeQuery();
+			ResultSetMetaData rsmd = rs.getMetaData();
+			
+			int columnsNumber = rsmd.getColumnCount();
+			while (rs.next()) {
+				for (int i = 1; i <= columnsNumber; i++) {
+					String columnValue = rs.getString(i);
+					list.add(columnValue);
+				}
+			}
+			conn.commit();
+		} catch (SQLException e) {System.out.println("Failed to get library by id.");return null;}
+		
+		return list;
+	}
+
+	@Override
+	public void updateBranchName(Connection conn,String name, int id) {
+		query = "update tbl_library_branch set branchName = ? where branchId = ?";
+		
+		try {
+			pstmt = conn.prepareStatement(query);
+			pstmt.setString(1, name);
+			pstmt.setInt(2, id);
+			pstmt.executeUpdate();
+			conn.commit();
+			
+		} catch (SQLException e) {
+			System.out.println("update branch name failed."); }
+	}
+
+	@Override
+	public void updateBranchAddress(Connection conn,String address, int id) {
+		query = "update tbl_library_branch set branchAddress = ? where branchId = ?";
+		
+		try {
+			pstmt = conn.prepareStatement(query);
+			pstmt.setString(1, address);
+			pstmt.setInt(2, id);
+			pstmt.executeUpdate();
+			conn.commit();
+			
+		} catch (SQLException e) { System.out.println("update branch name failed.");}
+	}
+
+	@Override
+	public int displayBooks(Connection conn, String table) {
+		int size=1;
+		try {
+			query = "Select * From "+table;
+			pstmt = conn.prepareStatement(query);
+			rs = pstmt.executeQuery();
+			
+			while (rs.next()) System.out.println((size++)+") "+rs.getString("title"));
+			
+		} catch (SQLException e) {System.out.println("view table failed."); return 0;}
+		return size;
+	}
+
+	@Override
+	public int numberOfCopies(Connection conn, int bookId, int branchId) {
+		int noOfCopies = 0;
+		query = "Select * from tbl_book_copies where branchId = ? and bookId = ?";
+		try {
+			pstmt = conn.prepareStatement(query);
+			pstmt.setInt(1, branchId);
+			pstmt.setInt(2, bookId);
+			rs = pstmt.executeQuery();
+			
+			if (rs.next()) noOfCopies = rs.getInt("noOfCopies");
+			else insertBookCopies(conn,bookId,branchId,0);
+			
+			conn.commit();
+		} catch (SQLException e) {System.out.println("Failed to get no of copies. bookdId: "+ bookId + " branchId: "+ branchId);
+			return 0;}
+		
+		return noOfCopies;
+	}
+
+	@Override
+	public void updateNoOfCopies(Connection conn, int bookId, int branchId, int noOfCopies) {
+		query = "update tbl_book_copies set noOfCopies = ? where branchId = ? and bookId = ?";
+		
+		try {
+			pstmt = conn.prepareStatement(query);
+			pstmt.setInt(1, noOfCopies);
+			pstmt.setInt(2, branchId);
+			pstmt.setInt(3, bookId);
+			pstmt.executeUpdate();
+			conn.commit();
+			
+		} catch (SQLException e) {System.out.println("update branch name failed. Number of copies: "+noOfCopies);}
+	}
+
+	@Override
+	public void insertBookCopies(Connection conn, int bookId, int branchId, int noOfCopies) {
+		query = "insert into tbl_book_copies (bookId,branchId,noOfCopies) values(?,?,?)";
+		
+		try {
+			pstmt = conn.prepareStatement(query);
+			pstmt.setInt(1, bookId);
+			pstmt.setInt(2, branchId);
+			pstmt.setInt(3, noOfCopies);
+			pstmt.executeUpdate();
+			conn.commit();
+			
+		} catch (SQLException e) {System.out.println("insert into table of book copies failed.");}
+	}
+}

@@ -1,0 +1,62 @@
+package com.gcit.lms.dao;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.gcit.lms.entity.Book;
+
+public class BookDAO extends BaseDAO{
+	
+	public BookDAO(Connection conn) {
+		super(conn);
+	}
+
+	public void addBook(Book book) throws ClassNotFoundException, SQLException{
+		save("insert into tbl_book (title) values (?)", new Object[] {book.getTitle()});
+	}
+	
+	public Integer addBookWithID(Book book) throws ClassNotFoundException, SQLException{
+		return saveWithID("insert into tbl_book (title) values (?)", new Object[] {book.getTitle()});
+	}
+	
+	public void addBookAuthors(Integer bookId, Integer authorId) throws ClassNotFoundException, SQLException{
+		save("insert into tbl_book_authors values (?, ?)", new Object[] {bookId, authorId});
+	}
+	
+	public void updateBook(Book book) throws ClassNotFoundException, SQLException{
+		save("update tbl_book set title = ? where bookId = ?", new Object[]{book.getTitle(), book.getBookId()});
+	}
+	
+	public void deleteBook(Book book) throws ClassNotFoundException, SQLException{
+		save("delete * from tbl_book where bookId = ?", new Object[] {book.getBookId()});
+	}
+
+	@Override
+	public List<Book> extractData(ResultSet rs) throws SQLException, ClassNotFoundException {
+		List<Book> books = new ArrayList<>();
+		AuthorDAO adao = new AuthorDAO(conn);
+		while(rs.next()){
+			Book b = new Book();
+			b.setTitle(rs.getString("title"));
+			b.setBookId(rs.getInt("bookId"));
+			b.setAuthors(adao.readFirstLevel("select * from tbl_author where authorId IN (Select authorId from tbl_book_authors where bookId = ?)", new Object[]{b.getBookId()}));
+			books.add(b);
+		}
+		return books;
+	}
+	
+	@Override
+	public List<Book> extractDataFirstLevel(ResultSet rs) throws SQLException, ClassNotFoundException {
+		List<Book> books = new ArrayList<>();
+		while(rs.next()){
+			Book b = new Book();
+			b.setTitle(rs.getString("title"));
+			b.setBookId(rs.getInt("bookId"));
+			books.add(b);
+		}
+		return books;
+	}
+}

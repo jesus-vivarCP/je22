@@ -1,0 +1,44 @@
+package com.gcit.lms.service;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.gcit.lms.dao.CopiesDAO;
+import com.gcit.lms.dao.PublisherDAO;
+import com.gcit.lms.entity.Copies;
+
+public class LibrarianService {
+	public int getBranchBookCopies(Integer branchId,Integer bookId) {
+		Connection conn = null;
+		try{
+			conn = ConnectionUtil.getConnection();
+			CopiesDAO copies = new CopiesDAO(conn);
+			
+			int noOfCopies = copies.readAllCopiesByBranch(branchId,bookId);
+			System.out.println("Success in copying");
+			return noOfCopies;
+			
+		}catch(SQLException | ClassNotFoundException e){
+			System.out.println("Fail in copying");
+		}
+		return 0;
+	}
+	
+	public Publisher getBookPublisher(Integer bookId) {
+		Connection conn = null;
+		try{
+			conn = ConnectionUtil.getConnection();
+			PublisherDAO publisher = new PublisherDAO(conn);
+			
+			Publisher pub = publisher.readPublisherByID(bookId);
+			System.out.println("Success in copying");
+			return pub;
+			
+		}catch(SQLException | ClassNotFoundException e){
+			System.out.println("Fail in copying");
+		}
+		return 0;
+	}
+}

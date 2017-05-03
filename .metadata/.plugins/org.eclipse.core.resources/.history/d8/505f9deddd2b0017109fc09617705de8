@@ -1,0 +1,15 @@
+/*
+ * Globals
+ */
+
+/* Links */
+a,
+a:focus,
+a:hover {
+  color: #FAFAD2;
+}
+
+body {
+  text-align: center;
+  background-color: #FFF8DC;
+}

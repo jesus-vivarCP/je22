@@ -1,0 +1,166 @@
+<%@include file="include.html"%>
+<%@page import="java.util.ArrayList"%>
+<%@page import="java.util.List"%>
+<%@page import="com.gcit.lms.entity.Branch"%>
+<%@page import="com.gcit.lms.entity.Copies"%>
+<%@page import="com.gcit.lms.entity.Book"%>
+<%@page import="com.gcit.lms.service.AdminService"%>
+<%@page import="com.gcit.lms.service.LibrarianService"%>
+
+
+<%
+	AdminService service = new AdminService();
+	LibrarianService bservice = new LibrarianService();
+	
+	Integer BranchsCount = service.getBranchsCount();
+	
+	Integer numOfPages = 0;
+	if (BranchsCount % 10 > 0) {
+		numOfPages = BranchsCount / 10 + 1;
+	} else {
+		numOfPages = BranchsCount / 10;
+	}
+	List<Branch> branchs = new ArrayList<>();
+	List<Copies> copies;
+	List<Book> books;
+	
+	if (request.getAttribute("branchs") != null) {
+		branchs = (List<Branch>) request.getAttribute("branchs");
+	} else {
+		branchs = service.getAllBranchs(1);
+	}
+	
+	Integer branchId;
+	if (request.getAttribute("branchId") != null) {
+		branchId = (Integer) request.getAttribute("branchId");
+	} else {
+		branchId = branchs.get(0).getBranchId();
+	}
+	
+	books = branchs.get(0).getBooks();
+	
+	 /*copies = bservice.getBranchBookCopies(branchId);
+	if(copies == null)
+		System.out.println("loans is null");
+	else
+		System.out.println("book id: "+ copies.get(0).getBookId());*/
+%>
+${message}
+<script>
+	function searchBranchs() {
+		$.ajax({
+			url : "searchLibary",
+			data : {
+				searchString : $('#searchString').val()
+			}
+		}).done(function(data) {
+			$('#branchsTable').html(data)
+		})
+	}
+</script>
+<div>
+	<div class="page-header">
+		<h1>Library Branch in LMS</h1>
+	</div>
+	<div class="input-group">
+
+		<form action="searchBranchs">
+			<input type="text" class="form-control" name="searchString"
+				id="searchString" placeholder="Search for..."
+				oninput="searchBranchs()">
+		</form>
+	</div>
+	<nav aria-label="Page navigation">
+		<ul class="pagination">
+			<li><a href="#" aria-label="Previous"> <span
+					aria-hidden="true">&laquo;</span>
+			</a></li>
+			<%
+				for (int i = 1; i <= numOfPages; i++) {
+			%>
+			<li><a href="pageLibrary?pageNo=<%=i%>"><%=i%></a></li>
+			<%
+				}
+			%>
+			<li><a href="#" aria-label="Next"> <span aria-hidden="true">&raquo;</span>
+			</a></li>
+		</ul>
+	</nav>
+	<table class="table" id="branchsTable">
+		<thead>
+			<tr>
+				<th>#</th>
+				<th>Branch Name</th>
+				<th>Branch Address</th>
+				<th>Edit</th>
+				<th>Delete</th>
+			</tr>
+		</thead>
+		<tbody>
+			<%
+				for (Branch a : branchs) {
+			%>
+			<tr>
+				<td><%=branchs.indexOf(a) + 1%></td>
+				<td><%=a.getBranchName()%></td>
+				<td><%=a.getBranchAddress()%></td>
+				<td><button type="button" class="btn btn-primary"
+						data-toggle="modal" data-target="#editBranchModal"
+						href="editbranch.jsp?branchId=<%=a.getBranchId()%>">Update</button></td>
+				<td><button type="button" class="btn btn-success">
+						<a href="#?branchId=<%=a.getBranchId()%>">copies+</a>
+					</button></td>
+			</tr>
+			<%
+				}
+			%>
+		</tbody>
+	</table>
+	<hr>
+	<table class="table" id="loansTable">
+		<thead>
+			<tr>
+				<th>Branch Name</th>
+				<th>Book title</th>
+				<th>Publisher</th>
+				<th>Number of Copies</th>
+				<th>Add Copies</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr> 
+				<%
+					int idx=0;
+					for(BookLoans loan: loans) {
+				%>
+				<tr>
+						<td><%=loan.getCardNo()%></td>
+						<td><%=loan.getBookId()%></td>
+						<td><%=loan.getBranchId()%></td>
+						<td><%=loan.getDateOut()%></td>
+						<td><%=loan.getDateIn()%></td>
+						<td><%=loan.getDueDate()%></td>
+						<td><button type="button" class="btn btn-success">
+						<a href="extendLoan?cardNo=<%=loan.getCardNo()%>&loc=<%=idx%>">Extend due date</a></button></td>
+				</tr>
+				<%idx++;}%>
+		</tbody>
+	</table>
+	<button type="button" class="btn btn-success" data-toggle="modal"
+		data-target="#editBranchModal" href="addbranch.jsp">Add
+		Branch</button>
+</div>
+
+<div class="modal fade bs-example-modal-lg" id="editBranchModal"
+	tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">....</div>
+	</div>
+</div>
+<script>
+	$(document).ready(function() {
+		$('.modal').on('hidden.bs.modal', function(e) {
+			$(this).removeData();
+		});
+	});
+</script>

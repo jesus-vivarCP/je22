@@ -1,0 +1,74 @@
+package com.gcit.lms.dao;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.gcit.lms.entity.Publisher;
+
+public class PublisherDAO extends BaseDAO {
+
+	public PublisherDAO(Connection conn) {
+		super(conn);
+	}
+
+	public void addPublisher(Publisher publisher) throws ClassNotFoundException, SQLException {
+		save("insert into tbl_publisher (publisherName,publisherAddress,publisherPhone) values (?,?,?)", new Object[] { publisher.getPublisherName() });
+	}
+
+	public void updatePublisher(Publisher Publisher) throws ClassNotFoundException, SQLException {
+		save("update tbl_publisher set PublisherName = ? where PublisherId = ?",
+				new Object[] { Publisher.getPublisherName(), Publisher.getPublisherId() });
+	}
+
+	public void deletePublisher(Publisher Publisher) throws ClassNotFoundException, SQLException {
+		save("delete * from tbl_Publisher where PublisherId = ?", new Object[] { Publisher.getPublisherId() });
+	}
+
+	public List<Publisher> readAllPublishers() throws ClassNotFoundException, SQLException {
+		return read("select * from tbl_Publisher", null);
+	}
+
+	public Publisher readPublisherByID(Integer PublisherID) throws ClassNotFoundException, SQLException {
+		List<Publisher> Publishers = read("select * from tbl_Publisher where PublisherId = ?", new Object[] { PublisherID });
+		if (Publishers != null && !Publishers.isEmpty()) {
+			return Publishers.get(0);
+		}
+		return null;
+	}
+
+	public List<Publisher> readPublishersByName(String PublisherName) throws ClassNotFoundException, SQLException {
+		return read("select * from tbl_Publisher where PublisherName like ?", new Object[] { PublisherName });
+	}
+
+	@Override
+	public List<Publisher> extractData(ResultSet rs) throws SQLException, ClassNotFoundException {
+		List<Publisher> Publishers = new ArrayList<>();
+		BookDAO bdao = new BookDAO(conn);
+		while (rs.next()) {
+			Publisher a = new Publisher();
+			a.setPublisherId(rs.getInt("PublisherId"));
+			a.setPublisherName(rs.getString("PublisherName"));
+			a.setBooks(bdao.readFirstLevel(
+					"select * from tbl_book where bookId IN (Select bookId from tbl_book_Publishers where PublisherId = ?)",
+					new Object[] { a.getPublisherId() }));
+			Publishers.add(a);
+		}
+		return Publishers;
+	}
+
+	@Override
+	public List extractDataFirstLevel(ResultSet rs) throws SQLException, ClassNotFoundException {
+		List<Publisher> Publishers = new ArrayList<>();
+		while (rs.next()) {
+			Publisher a = new Publisher();
+			a.setPublisherId(rs.getInt("PublisherId"));
+			a.setPublisherName(rs.getString("PublisherName"));
+			Publishers.add(a);
+		}
+		return Publishers;
+	}
+
+}

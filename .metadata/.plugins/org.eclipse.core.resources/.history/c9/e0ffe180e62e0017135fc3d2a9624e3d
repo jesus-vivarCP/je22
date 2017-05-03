@@ -1,0 +1,24 @@
+package com.gcit.lms.service;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
+
+import com.gcit.lms.dao.CopiesDAO;
+import com.gcit.lms.entity.Copies;
+
+public class LibrarianService {
+	public List<Copies> getBranchBookCopies(Integer branchId) {
+		Connection conn = null;
+		try{
+			conn = ConnectionUtil.getConnection();
+			CopiesDAO copies = new CopiesDAO(conn);
+			
+			return copies.readAllCopiesByBranch(branchId);
+			
+		}catch(SQLException | ClassNotFoundException e){
+			
+		}
+		return null;
+	}
+}

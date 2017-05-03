@@ -1,0 +1,58 @@
+package com.gcit.lms.dao;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.gcit.lms.entity.Genre;
+
+public class GenreDAO extends BaseDAO{
+
+	public GenreDAO(Connection conn) {
+		super(conn);
+	}
+
+	public void addGenre(Genre Genre) throws ClassNotFoundException, SQLException{
+		save("insert into tbl_genre (genre_name) values (?)", new Object[] {Genre.getGenreName()});
+	}
+	
+	public Integer addGenreWithID(Genre Genre) throws ClassNotFoundException, SQLException{
+		return saveWithID("insert into tbl_genre (genre_name) values (?)", new Object[] {Genre.getGenreName()});
+	}
+	
+	public void updateGenre(Genre Genre) throws ClassNotFoundException, SQLException{
+		save("update tbl_genre set genre_name = ? where GenreId = ?", new Object[]{Genre.getTitle(), Genre.getGenreId()});
+	}
+	
+	public void deleteGenre(Genre Genre) throws ClassNotFoundException, SQLException{
+		save("delete * from tbl_Genre where GenreId = ?", new Object[] {Genre.getGenreId()});
+	}
+
+	@Override
+	public List<Genre> extractData(ResultSet rs) throws SQLException, ClassNotFoundException {
+		List<Genre> Genres = new ArrayList<>();
+		AuthorDAO adao = new AuthorDAO(conn);
+		while(rs.next()){
+			Genre b = new Genre();
+			b.setTitle(rs.getString("title"));
+			b.setGenreId(rs.getInt("GenreId"));
+			b.setAuthors(adao.readFirstLevel("select * from tbl_author where authorId IN (Select authorId from tbl_Genre_authors where GenreId = ?)", new Object[]{b.getGenreId()}));
+			Genres.add(b);
+		}
+		return Genres;
+	}
+	
+	@Override
+	public List<Genre> extractDataFirstLevel(ResultSet rs) throws SQLException, ClassNotFoundException {
+		List<Genre> Genres = new ArrayList<>();
+		while(rs.next()){
+			Genre b = new Genre();
+			b.setTitle(rs.getString("title"));
+			b.setGenreId(rs.getInt("GenreId"));
+			Genres.add(b);
+		}
+		return Genres;
+	}
+}

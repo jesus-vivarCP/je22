@@ -1,0 +1,46 @@
+<%@include file="include.html"%>
+<%@page import="java.util.*"%>
+
+<%
+
+%>
+<div>
+	<div class="page-header">
+		<h1>Book and Author Information</h1>
+	</div>
+	<h4>Enter book details</h4>
+	<form action="commit">
+	<table class="table" id="bookTable">
+		<thead>
+			<tr>
+				<th>info</th>
+				<th>select</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>title</td>
+				<td><input type="text" id="title" name="bookTitle"></td>
+			</tr>
+			<hr>
+		</tbody>
+	</table>
+	<button type="button" class="btn btn-primary" name="commit">Add</button>
+	</form>
+</div>
+
+<div class="modal fade bs-example-modal-lg" id="modifyBookModal"
+	tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content"></div>
+	</div>
+</div>
+<script>
+$(document).ready(function()
+{
+    $('.modal').on('hidden.bs.modal', function(e)
+    { 
+        $(this).removeData();
+    }) ;
+});
+</script>

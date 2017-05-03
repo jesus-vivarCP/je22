@@ -1,0 +1,13 @@
+<div class="jumbotron">
+	<h1>Welcome Administrator</h1>
+
+	<h3>
+		<a href="admin.jsp?service=books">Book & Author Services</a>
+		<h3>
+			<h3>
+				<a href="servicebranch.jsp">Library Branch Services</a>
+			</h3>
+			<h3>
+				<a href="override.jsp">Borrowed books Services</a>
+			</h3>
+</div>

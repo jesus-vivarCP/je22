@@ -1,0 +1,12 @@
+package com.gcit.libraryApp.Main;
+
+import com.gcit.libraryApp.UI.UI;
+
+public class App {
+
+	public static void main(String[] args) {
+		UI ui = null;
+		System.out.println("Connecting to database...");
+		ui = new UI();
+	}
+}

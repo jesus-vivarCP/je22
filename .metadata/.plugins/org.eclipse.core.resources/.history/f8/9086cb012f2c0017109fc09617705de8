@@ -1,0 +1,31 @@
+<%@include file="include.html"%>
+
+<%
+	String option = request.getParameter("option");
+
+	switch (option) {
+
+	case "Author":
+%>
+
+<div class="jumbotron">
+	<h2>Admin Author Options</h2>
+
+	<h3>
+		<a href="addauthor.jsp">Add Author</a><br />
+	</h3>
+	<h3>
+		<a href="viewauthors.jsp">View Authors</a><br />
+	</h3>
+</div>
+<%break;
+	case "Books":
+%>
+<%break;
+	case "";
+%>
+
+
+<%
+	}
+%>

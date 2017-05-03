@@ -1,0 +1,160 @@
+package com.gcit.libraryApp.Borrower;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+
+import com.gcit.libraryApp.GenericFunction.GenericFunctions;
+
+public class Checkout implements Borrower {
+	private String query;
+	private GenericFunctions gf;
+	private ArrayList<Integer> defaultCollection;
+	private ArrayList<String> dateOut;
+	
+	public Checkout(Connection conn, GenericFunctions gf) {
+		this.gf = gf;
+		query = "";
+		defaultCollection = new ArrayList<>();
+		dateOut = new ArrayList<>();
+	}
+	
+	@Override
+	public int showTextBookAvailable(Connection conn, int branchId) {
+		int size=1;
+		
+		query = "Select * from tbl_book_copies join tbl_book on (tbl_book.bookId=tbl_book_copies.bookId) "+ 
+				"where tbl_book_copies.branchId = ? "+ 
+				"having tbl_book_copies.noOfCopies > 0";
+		
+		PreparedStatement pstmt;
+		ResultSet rs;
+		
+		try {
+			pstmt = conn.prepareStatement(query);
+			pstmt.setInt(1, branchId);
+		    rs = pstmt.executeQuery();
+		    
+		    while(rs.next()) {
+		    	defaultCollection.add(rs.getInt("bookId"));
+		    	gf.println((size) +") "+ rs.getString("title"));
+		    	size++;}
+		    conn.commit();
+			
+		} catch (SQLException e) {
+			gf.println("Failed to prepare available copies of textbooks");
+		}
+		return size==1 ? 0 : size;
+	}
+	
+	@Override
+	public int showTextBookAvailable(Connection conn, int branchId, int cardNo) {
+		int size=1;
+		query = "Select * from tbl_book_loans join tbl_book on (tbl_book.bookId = tbl_book_loans.bookId) "+ 
+				"where tbl_book_loans.branchId = ? and tbl_book_loans.cardNo = ? and tbl_book_loans.dateIn is null";
+		
+		PreparedStatement pstmt;
+		ResultSet rs;
+		
+		try {
+			pstmt = conn.prepareStatement(query);
+			pstmt.setInt(1, branchId);
+			pstmt.setInt(2, cardNo);
+		    rs = pstmt.executeQuery();
+		    
+		    while(rs.next()) {
+		    	defaultCollection.add(rs.getInt("bookId"));
+		    	dateOut.add(rs.getString("dateOut"));
+		    	gf.println((size) +") "+ rs.getString("title"));
+		    	size++;}
+		    conn.commit();
+			
+		} catch (SQLException e) {
+			gf.println("Failed to prepare checkout textbooks");
+		}
+		return size==1 ? 0 : size;
+	}
+
+	@Override
+	public void updateBookRecord(Connection conn, ArrayList<String> borrower, int branchId, int bookId) {
+		/*query = "INSERT INTO tbl_book_loans () VALUES (?,?,?,now(),DATE_ADD(NOW(), INTERVAL 7 DAY),null) "+
+				"ON DUPLICATE KEY UPDATE bookId=VALUES(bookId),branchId=VALUES(branchId),cardNo=VALUES(cardNo),"+
+				"dateOut=VALUES(dateOut),dueDate=VALUES(dueDate),dateIn=VALUES(dateIn)";*/
+		
+		query = "INSERT INTO tbl_book_loans () VALUES (?,?,?,now(),DATE_ADD(NOW(), INTERVAL 7 DAY),null)";
+		
+		PreparedStatement pstmt;
+		try {
+			pstmt = conn.prepareStatement(query);
+			pstmt.setInt(1, bookId);
+			pstmt.setInt(2, branchId);
+			pstmt.setInt(3, Integer.parseInt(borrower.get(0)));
+			
+		    pstmt.executeUpdate();
+		    conn.commit();
+		} catch (SQLException e) {
+			gf.println("Book record update failed.");
+			System.out.println(e);
+		}
+		
+	}
+	
+	@Override
+	public void updateBookRecord(Connection conn, int cardNo, int branchId, int bookId,String dateOut) {
+		query = "Update tbl_book_loans Set dateIn = now() where bookId = ? and branchId = ? and cardNo= ? and dateOut = ?";
+		
+		PreparedStatement pstmt;
+		try {
+			pstmt = conn.prepareStatement(query);
+			pstmt.setInt(1, bookId);
+			pstmt.setInt(2, branchId);
+			pstmt.setInt(3, cardNo);
+			
+		    pstmt.executeUpdate();
+		    conn.commit();
+		} catch (SQLException e) {
+			gf.println("Book record update failed.");
+			System.out.println(e);
+		}
+		
+	}
+
+	@Override
+	public ArrayList<String> varifyCardNumber(Connection conn, int card) {
+		ArrayList<String> list = new ArrayList<>();
+		
+		query = "Select * from tbl_borrower where cardNo = ?";
+		
+		PreparedStatement pstmt;
+		try {
+			pstmt = conn.prepareStatement(query);
+			pstmt.setInt(1, card);
+		    ResultSet rs = pstmt.executeQuery();
+		    rs.next();
+		    list.add(String.valueOf(rs.getInt("cardNo")));
+		    list.add(rs.getString("name"));
+		    list.add(rs.getString("address"));
+		    list.add(rs.getString("phone"));
+		} catch (SQLException e) {
+			gf.println("Borrower varify failed. ");
+			list.add("-1");
+		}
+		
+		return list;
+	}
+
+	@Override
+	public int getCurrentTableKey(int index) {
+		int key = defaultCollection.get(index-1);
+		defaultCollection.clear();
+		return key;
+	}
+	
+	public String getDateOut(int index){
+		String date = dateOut.get(index-1);
+		dateOut.clear();
+		return date;
+	}
+}
